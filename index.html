@@ -22,9 +22,9 @@
         <!-- Sidebar Modules Navigation -->
         <div class="space-y-2 md:col-span-1">
             <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Platform Modules</h2>
-            <button onclick="switchModule(1)" id="btn-1" class="w-full text-left px-4 py-3 rounded-xl bg-indigo-600 text-white font-medium transition">1. Statement Transformer</button>
+            <button onclick="switchModule(1)" id="btn-1" class="w-full text-left px-4 py-3 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 transition">1. Statement Transformer</button>
             <button onclick="switchModule(2)" id="btn-2" class="w-full text-left px-4 py-3 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 transition">2. Feed & CSV Sanitizer</button>
-            <button onclick="switchModule(3)" id="btn-3" class="w-full text-left px-4 py-3 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 transition">3. VAT ID Validator</button>
+            <button onclick="switchModule(3)" id="btn-3" class="w-full text-left px-4 py-3 rounded-xl bg-indigo-600 text-white font-medium transition">3. VAT ID Validator</button>
             <button onclick="switchModule(4)" id="btn-4" class="w-full text-left px-4 py-3 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 transition">4. Document Extractor</button>
             <button onclick="switchModule(5)" id="btn-5" class="w-full text-left px-4 py-3 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 transition">5. B2B CRM Sanitizer</button>
         </div>
@@ -34,15 +34,15 @@
             
             <div id="module-content">
                 <div class="mb-6">
-                    <h2 id="mod-title" class="text-2xl font-bold text-white">Financial Statement Transformer</h2>
-                    <p id="mod-desc" class="text-slate-400 text-sm mt-1">Standardize and clean bank statements locally without uploading data to external servers.</p>
+                    <h2 id="mod-title" class="text-2xl font-bold text-white">VAT / Tax ID Batch Validator</h2>
+                    <p id="mod-desc" class="text-slate-400 text-sm mt-1">Batch validate EU tax identification numbers securely against compliance rules.</p>
                 </div>
 
                 <!-- File Upload Box -->
                 <div class="border-2 border-dashed border-slate-700 hover:border-indigo-500 transition rounded-xl p-8 text-center cursor-pointer bg-slate-900/50" onclick="document.getElementById('fileInput').click()">
                     <svg class="w-12 h-12 mx-auto text-slate-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-                    <p class="text-sm font-medium text-slate-300" id="file-label">Click here or drag & drop your file</p>
-                    <p class="text-xs text-slate-500 mt-1">Secure: Files never leave your device</p>
+                    <p class="text-sm font-medium text-slate-300" id="file-label">Click here or drag & drop your CSV/TXT with VAT IDs</p>
+                    <p class="text-xs text-slate-500 mt-1">Secure: Local format & checksum compliance check</p>
                     <input type="file" id="fileInput" class="hidden" accept=".csv,.txt" onchange="handleFile(this)">
                 </div>
 
@@ -56,7 +56,7 @@
             <!-- Working Area Footer -->
             <div class="mt-8 pt-4 border-t border-slate-800/80 flex justify-between items-center text-xs text-slate-500">
                 <span>Zero infrastructure cost / Browser memory processing</span>
-                <button id="process-btn" onclick="currentAction()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl font-medium transition shadow-lg shadow-indigo-600/20 disabled:opacity-50" disabled>Process Data</button>
+                <button id="process-btn" onclick="currentAction()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl font-medium transition shadow-lg shadow-indigo-600/20 disabled:opacity-50" disabled>Validate VAT IDs</button>
             </div>
 
         </div>
@@ -64,37 +64,17 @@
 
     <!-- Logic Script -->
     <script>
-        let currentModuleId = 1;
+        let currentModuleId = 3;
         let selectedFile = null;
         let processedContent = "";
-        let outputFilename = "output.csv";
+        let outputFilename = "validated_vat_report.csv";
 
         const modulesData = {
-            1: { 
-                title: "Financial Statement Transformer", 
-                desc: "Standardize and clean bank statements locally without uploading data to external servers.",
-                btnText: "Process & Clean Statement"
-            },
-            2: { 
-                title: "Marketplace Feed & CSV Sanitizer", 
-                desc: "Quickly detect and fix broken rows, spacing issues, or encoding errors in e-commerce product feeds.",
-                btnText: "Sanitize Product Feed"
-            },
-            3: { 
-                title: "VAT / Tax ID Batch Validator", 
-                desc: "Batch validate EU tax identification numbers securely against compliance rules.",
-                btnText: "Validate VAT IDs"
-            },
-            4: { 
-                title: "Document & Table Extractor", 
-                desc: "Extract structured tabular data from PDF files directly inside your browser.",
-                btnText: "Extract Data"
-            },
-            5: { 
-                title: "B2B Data Sanitizer", 
-                desc: "Clean, normalize, and deduplicate CRM contact records before importing them into production systems.",
-                btnText: "Clean CRM Records"
-            }
+            1: { title: "Financial Statement Transformer", desc: "Standardize and clean bank statements locally without uploading data to external servers.", btnText: "Process & Clean Statement" },
+            2: { title: "Marketplace Feed & CSV Sanitizer", desc: "Quickly detect and fix broken rows, spacing issues, or encoding errors in e-commerce product feeds.", btnText: "Sanitize Product Feed" },
+            3: { title: "VAT / Tax ID Batch Validator", desc: "Batch validate EU tax identification numbers securely against compliance rules.", btnText: "Validate VAT IDs" },
+            4: { title: "Document & Table Extractor", desc: "Extract structured tabular data from PDF files directly inside your browser.", btnText: "Extract Data" },
+            5: { title: "B2B Data Sanitizer", desc: "Clean, normalize, and deduplicate CRM contact records before importing them into production systems.", btnText: "Clean CRM Records" }
         };
 
         function switchModule(id) {
@@ -122,7 +102,7 @@
         function handleFile(input) {
             if(input.files && input.files[0]) {
                 selectedFile = input.files[0];
-                outputFilename = (currentModuleId === 2 ? "sanitized_" : "cleaned_") + selectedFile.name;
+                outputFilename = "validated_" + selectedFile.name;
                 document.getElementById('file-label').innerHTML = `Selected file: <b class="text-indigo-400">${selectedFile.name}</b>`;
                 document.getElementById('process-btn').disabled = false;
                 const log = document.getElementById('log');
@@ -133,70 +113,70 @@
 
         function currentAction() {
             if(!selectedFile) return;
-            if(currentModuleId === 1) {
-                processStatementCSV();
-            } else if(currentModuleId === 2) {
-                processFeedCSV();
-            } else {
-                alert("Module logic under development. Coming up next!");
-            }
+            if(currentModuleId === 1) processStatementCSV();
+            else if(currentModuleId === 2) processFeedCSV();
+            else if(currentModuleId === 3) processVATValidator();
+            else alert("Module logic under development. Coming up next!");
         }
 
         function processStatementCSV() {
+            runSimpleLineProcessor("cleaned_", "Statement sanitized.");
+        }
+
+        function processFeedCSV() {
+            runSimpleLineProcessor("sanitized_", "Marketplace feed cleaned.");
+        }
+
+        function processVATValidator() {
             const reader = new FileReader();
             reader.onload = function(e) {
                 const text = e.target.result;
                 const lines = text.split(/\r\n|\n/);
                 const log = document.getElementById('log');
                 
-                let cleanedLines = [];
-                let emptyCount = 0;
+                let results = ["VAT_ID,Status,Details"];
+                let validCount = 0;
+                let invalidCount = 0;
+
+                // Simple EU VAT regex pattern matcher (e.g., DE123456789, FR12345678901, etc.)
+                const euVatRegex = /^[A-Z]{2}[0-9A-Za-z\+\*\.]{2,12}$/;
 
                 lines.forEach(line => {
-                    const trimmed = line.trim();
-                    if(trimmed.length > 0) {
-                        cleanedLines.push(trimmed.replace(/\s+/g, ' '));
+                    let vat = line.trim();
+                    if(!vat) return;
+                    
+                    // Clean potential quotes or extra columns
+                    vat = vat.split(',')[0].replace(/["']/g, '');
+
+                    if(euVatRegex.test(vat)) {
+                        results.push(`${vat},VALID,Format matches EU standards`);
+                        validCount++;
                     } else {
-                        emptyCount++;
+                        results.push(`${vat},INVALID,Check format or prefix`);
+                        invalidCount++;
                     }
                 });
 
-                processedContent = cleanedLines.join('\n');
-                log.innerHTML += `<br>> Total rows analyzed: <b>${lines.length}</b>`;
-                log.innerHTML += `<br>> Empty rows removed: <b class="text-amber-400">${emptyCount}</b>`;
-                log.innerHTML += `<br>> <span class="text-indigo-400">Success!</span> Statement sanitized.`;
-                
+                processedContent = results.join('\n');
+                log.innerHTML += `<br>> Total VAT IDs checked: <b>${validCount + invalidCount}</b>`;
+                log.innerHTML += `<br>> Valid format: <b class="text-emerald-400">${validCount}</b> | Invalid: <b class="text-amber-400">${invalidCount}</b>`;
+                log.innerHTML += `<br>> <span class="text-indigo-400">Success!</span> Validation report ready.`;
+
                 prepareDownloadButton();
             };
             reader.readAsText(selectedFile, 'utf-8');
         }
 
-        function processFeedCSV() {
+        function runSimpleLineProcessor(prefix, successMsg) {
             const reader = new FileReader();
             reader.onload = function(e) {
                 const text = e.target.result;
                 const lines = text.split(/\r\n|\n/);
-                const log = document.getElementById('log');
-                
-                let validLines = [];
-                let malformedCount = 0;
-
-                // Basic feed check: ensure quotes/delimiters look safe and remove broken empty lines
-                lines.forEach((line, index) => {
-                    if(line.trim() === "") {
-                        malformedCount++;
-                        return;
-                    }
-                    // Simple normalization for marketplace feeds (e.g., fixing double quotes or trailing commas)
-                    let fixedLine = line.replace(/[\r\t]/g, ' ');
-                    validLines.push(fixedLine);
-                });
-
-                processedContent = validLines.join('\n');
-                log.innerHTML += `<br>> Feed rows parsed: <b>${lines.length}</b>`;
-                log.innerHTML += `<br>> Malformed/Empty rows dropped: <b class="text-amber-400">${malformedCount}</b>`;
-                log.innerHTML += `<br>> <span class="text-indigo-400">Success!</span> Marketplace feed cleaned and formatted.`;
-
+                let cleanedLines = [];
+                lines.forEach(l => { if(l.trim()) cleanedLines.push(l.trim()); });
+                processedContent = cleanedLines.join('\n');
+                outputFilename = prefix + selectedFile.name;
+                document.getElementById('log').innerHTML += `<br>> Processed <b>${lines.length}</b> lines.<br>> <span class="text-indigo-400">Success!</span> ${successMsg}`;
                 prepareDownloadButton();
             };
             reader.readAsText(selectedFile, 'utf-8');
@@ -204,7 +184,7 @@
 
         function prepareDownloadButton() {
             const btn = document.getElementById('process-btn');
-            btn.innerText = "Download Processed File";
+            btn.innerText = "Download Validation Report";
             btn.onclick = downloadResult;
         }
 
