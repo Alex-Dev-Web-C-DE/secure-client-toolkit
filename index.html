@@ -63,7 +63,7 @@
                 </div>
 
                 <!-- Advanced Options Toolbar -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 bg-slate-900/60 p-4 rounded-xl border border-slate-800">
                     <div>
                         <label class="block text-xs font-medium text-slate-400 mb-1">Delimiter Format</label>
                         <select id="opt-delimiter" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
@@ -79,6 +79,13 @@
                             <option value="windows-1251">Windows-1251 (Cyrillic / Banks)</option>
                         </select>
                     </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Output Format</label>
+                        <select id="opt-format" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                            <option value="csv">CSV (Spreadsheet)</option>
+                            <option value="json">JSON (API / Dev)</option>
+                        </select>
+                    </div>
                 </div>
 
                 <!-- File Upload Box -->
@@ -89,19 +96,27 @@
                     <input type="file" id="fileInput" class="hidden" accept=".csv,.txt,.tsv" onchange="handleFile(this)">
                 </div>
 
-                <!-- Result & Logs Area -->
+                <!-- Result & Preview Area -->
                 <div id="result-area" class="mt-6 hidden space-y-4">
                     <div class="flex justify-between items-center">
-                        <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Execution Logs & Metrics</h3>
+                        <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Live Preview & Execution Metrics</h3>
                         <span id="metrics-badge" class="text-xs bg-indigo-950 text-indigo-300 px-2.5 py-1 rounded-md border border-indigo-800/50">Ready</span>
                     </div>
-                    <div id="log" class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-xs font-mono text-emerald-400 h-28 overflow-y-auto"></div>
+                    <!-- Table Preview Container -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden max-h-48 overflow-y-auto">
+                        <table id="preview-table" class="w-full text-left border-collapse text-xs">
+                            <thead id="preview-head" class="bg-slate-950 text-slate-400 border-b border-slate-800 sticky top-0"></thead>
+                            <tbody id="preview-body" class="divide-y divide-slate-800/60 font-mono text-slate-300"></tbody>
+                        </table>
+                    </div>
+                    <!-- Logs Container -->
+                    <div id="log" class="bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs font-mono text-emerald-400 h-20 overflow-y-auto"></div>
                 </div>
             </div>
 
             <!-- Working Area Footer -->
             <div class="mt-8 pt-4 border-t border-slate-800/80 flex justify-between items-center text-xs text-slate-500">
-                <span>SecureClient Engine v1.2</span>
+                <span>SecureClient Engine v1.5</span>
                 <button id="process-btn" onclick="currentAction()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-medium transition shadow-lg shadow-indigo-600/25 disabled:opacity-40 disabled:cursor-not-allowed" disabled>Process Data</button>
             </div>
 
@@ -162,49 +177,95 @@
         function currentAction() {
             if(!selectedFile) return;
             const encoding = document.getElementById('opt-encoding').value;
+            const format = document.getElementById('opt-format').value;
             
             const reader = new FileReader();
             reader.onload = function(e) {
                 const text = e.target.result;
                 
-                if(currentModuleId === 1) processStatement(text);
-                else if(currentModuleId === 2) processFeed(text);
-                else if(currentModuleId === 3) processVAT(text);
-                else if(currentModuleId === 4) processExtractor(text);
-                else if(currentModuleId === 5) processCRM(text);
+                if(currentModuleId === 1) processStatement(text, format);
+                else if(currentModuleId === 2) processFeed(text, format);
+                else if(currentModuleId === 3) processVAT(text, format);
+                else if(currentModuleId === 4) processExtractor(text, format);
+                else if(currentModuleId === 5) processCRM(text, format);
             };
             reader.readAsText(selectedFile, encoding);
         }
 
-        function processStatement(text) {
+        function renderPreview(rows, delimiter = ',') {
+            const head = document.getElementById('preview-head');
+            const body = document.getElementById('preview-body');
+            head.innerHTML = '';
+            body.innerHTML = '';
+
+            if(rows.length === 0) return;
+            
+            const headers = rows[0].split(delimiter);
+            let headTr = document.createElement('tr');
+            headers.forEach(h => {
+                let th = document.createElement('th');
+                th.className = "px-3 py-2 font-medium";
+                th.innerText = h.replace(/["']/g, '').trim();
+                headTr.appendChild(th);
+            });
+            head.appendChild(headTr);
+
+            // Render up to 5 preview rows
+            for(let i = 1; i < Math.min(rows.length, 6); i++) {
+                let tr = document.createElement('tr');
+                let cols = rows[i].split(delimiter);
+                cols.forEach(c => {
+                    let td = document.createElement('td');
+                    td.className = "px-3 py-2 truncate max-w-xs";
+                    td.innerText = c.replace(/["']/g, '').trim();
+                    tr.appendChild(td);
+                });
+                body.appendChild(tr);
+            }
+        }
+
+        function formatOutput(lines, format, defaultName) {
+            const delimiter = document.getElementById('opt-delimiter').value;
+            renderPreview(lines, delimiter);
+
+            if(format === 'json') {
+                outputFilename = defaultName.replace('.csv', '.json');
+                let headers = lines[0] ? lines[0].split(delimiter).map(h => h.replace(/["']/g, '').trim()) : [];
+                let jsonArr = [];
+                for(let i = 1; i < lines.length; i++) {
+                    let vals = lines[i].split(delimiter);
+                    let obj = {};
+                    headers.forEach((h, idx) => {
+                        obj[h || `col_${idx+1}`] = vals[idx] ? vals[idx].replace(/["']/g, '').trim() : "";
+                    });
+                    jsonArr.push(obj);
+                }
+                processedContent = JSON.stringify(jsonArr, null, 2);
+            } else {
+                outputFilename = defaultName;
+                processedContent = lines.join('\n');
+            }
+        }
+
+        function processStatement(text, format) {
             const lines = text.split(/\r\n|\n/);
             let cleaned = [];
-            let empty = 0;
-            lines.forEach(l => {
-                if(l.trim()) cleaned.push(l.trim().replace(/\s+/g, ' '));
-                else empty++;
-            });
-            processedContent = cleaned.join('\n');
-            outputFilename = "cleaned_statement.csv";
-            document.getElementById('log').innerHTML += `<br>> Analyzed rows: <b>${lines.length}</b> | Removed empty: <b class="text-amber-400">${empty}</b><br>> <span class="text-indigo-400">Success!</span> Statement transformed.`;
+            lines.forEach(l => { if(l.trim()) cleaned.push(l.trim().replace(/\s+/g, ' ')); });
+            formatOutput(cleaned, format, "cleaned_statement.csv");
+            document.getElementById('log').innerHTML += `<br>> Analyzed rows: <b>${lines.length}</b> | Format: <b>${format.toUpperCase()}</b><br>> <span class="text-indigo-400">Success!</span> Statement transformed.`;
             prepareDownload();
         }
 
-        function processFeed(text) {
+        function processFeed(text, format) {
             const lines = text.split(/\r\n|\n/);
             let valid = [];
-            let dropped = 0;
-            lines.forEach(l => {
-                if(l.trim()) valid.push(l.replace(/[\r\t]/g, ' '));
-                else dropped++;
-            });
-            processedContent = valid.join('\n');
-            outputFilename = "sanitized_feed.csv";
-            document.getElementById('log').innerHTML += `<br>> Feed parsed: <b>${lines.length}</b> rows | Dropped malformed: <b class="text-amber-400">${dropped}</b><br>> <span class="text-indigo-400">Success!</span> Feed sanitized.`;
+            lines.forEach(l => { if(l.trim()) valid.push(l.replace(/[\r\t]/g, ' ')); });
+            formatOutput(valid, format, "sanitized_feed.csv");
+            document.getElementById('log').innerHTML += `<br>> Feed rows parsed: <b>${lines.length}</b> | Format: <b>${format.toUpperCase()}</b><br>> <span class="text-indigo-400">Success!</span> Feed sanitized.`;
             prepareDownload();
         }
 
-        function processVAT(text) {
+        function processVAT(text, format) {
             const lines = text.split(/\r\n|\n/);
             let results = ["VAT_ID,Status,Compliance_Note"];
             let vCount = 0, iCount = 0;
@@ -215,25 +276,23 @@
                 if(regex.test(vat)) { results.push(`${vat},VALID,Format OK`); vCount++; }
                 else { results.push(`${vat},INVALID,Check format`); iCount++; }
             });
-            processedContent = results.join('\n');
-            outputFilename = "vat_validation_report.csv";
-            document.getElementById('log').innerHTML += `<br>> Valid VATs: <b class="text-emerald-400">${vCount}</b> | Invalid: <b class="text-amber-400">${iCount}</b><br>> <span class="text-indigo-400">Success!</span> Report generated.`;
+            formatOutput(results, format, "vat_validation_report.csv");
+            document.getElementById('log').innerHTML += `<br>> Valid: <b class="text-emerald-400">${vCount}</b> | Invalid: <b class="text-amber-400">${iCount}</b><br>> <span class="text-indigo-400">Success!</span> Report generated.`;
             prepareDownload();
         }
 
-        function processExtractor(text) {
+        function processExtractor(text, format) {
             const lines = text.split(/\r\n|\n/);
             let ext = ["Row_Index,Extracted_Content"];
             lines.forEach((l, i) => {
                 if(l.trim().length > 2) ext.push(`${i+1},"${l.trim().replace(/"/g, '""')}"`);
             });
-            processedContent = ext.join('\n');
-            outputFilename = "extracted_table.csv";
+            formatOutput(ext, format, "extracted_table.csv");
             document.getElementById('log').innerHTML += `<br>> Extracted records: <b>${ext.length - 1}</b><br>> <span class="text-indigo-400">Success!</span> Data structured.`;
             prepareDownload();
         }
 
-        function processCRM(text) {
+        function processCRM(text, format) {
             const lines = text.split(/\r\n|\n/);
             let unique = new Set();
             let dups = 0;
@@ -244,22 +303,24 @@
                     else unique.add(row);
                 }
             });
-            processedContent = Array.from(unique).join('\n');
-            outputFilename = "sanitized_crm_contacts.csv";
-            document.getElementById('log').innerHTML += `<br>> Unique CRM records: <b>${unique.size}</b> | Duplicates pruned: <b class="text-amber-400">${dups}</b><br>> <span class="text-indigo-400">Success!</span> CRM normalized.`;
+            let res = Array.from(unique);
+            formatOutput(res, format, "sanitized_crm_contacts.csv");
+            document.getElementById('log').innerHTML += `<br>> Unique records: <b>${unique.size}</b> | Duplicates pruned: <b class="text-amber-400">${dups}</b><br>> <span class="text-indigo-400">Success!</span> CRM normalized.`;
             prepareDownload();
         }
 
         function prepareDownload() {
             const btn = document.getElementById('process-btn');
-            btn.innerText = "Download Cleaned File";
+            btn.innerText = "Download Result File";
             btn.className = "bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-xl font-medium transition shadow-lg shadow-emerald-600/25";
             btn.onclick = downloadResult;
         }
 
         function downloadResult() {
             if(!processedContent) return;
-            const blob = new Blob([processedContent], { type: 'text/csv;charset=utf-8;' });
+            const format = document.getElementById('opt-format').value;
+            const mime = format === 'json' ? 'application/json;charset=utf-8;' : 'text/csv;charset=utf-8;';
+            const blob = new Blob([processedContent], { type: mime });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
