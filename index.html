@@ -1,77 +1,77 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SecureClient Data Toolkit — Браузерний хаб утиліт</title>
+    <title>SecureClient Toolkit — Privacy-First B2B Utilities</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
 
-    <!-- Хедер сайту -->
+    <!-- Header -->
     <header class="border-b border-slate-800 p-6 bg-slate-950/50 backdrop-blur">
         <div class="max-w-6xl mx-auto flex justify-between items-center">
             <h1 class="text-xl font-bold tracking-wider text-indigo-400">SecureClient<span class="text-white">Toolkit</span></h1>
-            <span class="text-xs bg-indigo-950 text-indigo-300 border border-indigo-800 px-3 py-1 rounded-full">100% Локальна обробка у браузері</span>
+            <span class="text-xs bg-indigo-950 text-indigo-300 border border-indigo-800 px-3 py-1 rounded-full">100% Client-Side Processing</span>
         </div>
     </header>
 
-    <!-- Основний контент -->
+    <!-- Main Content -->
     <main class="flex-grow max-w-6xl mx-auto p-6 w-full grid grid-cols-1 md:grid-cols-4 gap-6">
         
-        <!-- Навігація по 5 модулях -->
+        <!-- Sidebar Modules Navigation -->
         <div class="space-y-2 md:col-span-1">
-            <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Модулі платформи</h2>
-            <button onclick="switchModule(1)" id="btn-1" class="w-full text-left px-4 py-3 rounded-xl bg-indigo-600 text-white font-medium transition">1. Конвертер виписок</button>
-            <button onclick="switchModule(2)" id="btn-2" class="w-full text-left px-4 py-3 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 transition">2. Валідатор прайсів</button>
-            <button onclick="switchModule(3)" id="btn-3" class="w-full text-left px-4 py-3 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 transition">3. Перевірка VAT ID</button>
-            <button onclick="switchModule(4)" id="btn-4" class="w-full text-left px-4 py-3 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 transition">4. Екстрактор з PDF</button>
-            <button onclick="switchModule(5)" id="btn-5" class="w-full text-left px-4 py-3 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 transition">5. Санітайзер CRM</button>
+            <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Platform Modules</h2>
+            <button onclick="switchModule(1)" id="btn-1" class="w-full text-left px-4 py-3 rounded-xl bg-indigo-600 text-white font-medium transition">1. Statement Transformer</button>
+            <button onclick="switchModule(2)" id="btn-2" class="w-full text-left px-4 py-3 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 transition">2. Feed & CSV Sanitizer</button>
+            <button onclick="switchModule(3)" id="btn-3" class="w-full text-left px-4 py-3 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 transition">3. VAT ID Validator</button>
+            <button onclick="switchModule(4)" id="btn-4" class="w-full text-left px-4 py-3 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 transition">4. Document Extractor</button>
+            <button onclick="switchModule(5)" id="btn-5" class="w-full text-left px-4 py-3 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 transition">5. B2B CRM Sanitizer</button>
         </div>
 
-        <!-- Робоча зона модуля -->
+        <!-- Working Area -->
         <div class="md:col-span-3 bg-slate-950 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
             
             <div id="module-content">
                 <div class="mb-6">
                     <h2 id="mod-title" class="text-2xl font-bold text-white">Financial Statement Transformer</h2>
-                    <p id="mod-desc" class="text-slate-400 text-sm mt-1">Завантажте банківську виписку у форматі CSV для локального очищення та приведення до стандартного формату.</p>
+                    <p id="mod-desc" class="text-slate-400 text-sm mt-1">Standardize and clean bank statements locally without uploading data to external servers.</p>
                 </div>
 
-                <!-- Зона завантаження файлу -->
+                <!-- File Upload Box -->
                 <div class="border-2 border-dashed border-slate-700 hover:border-indigo-500 transition rounded-xl p-8 text-center cursor-pointer bg-slate-900/50" onclick="document.getElementById('fileInput').click()">
                     <svg class="w-12 h-12 mx-auto text-slate-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-                    <p class="text-sm font-medium text-slate-300" id="file-label">Натисніть сюди або перетягніть CSV файл</p>
-                    <p class="text-xs text-slate-500 mt-1">Безпечно: файл не залишає ваш пристрій</p>
+                    <p class="text-sm font-medium text-slate-300" id="file-label">Click here or drag & drop your CSV file</p>
+                    <p class="text-xs text-slate-500 mt-1">Secure: Files never leave your device</p>
                     <input type="file" id="fileInput" class="hidden" accept=".csv" onchange="handleFile(this)">
                 </div>
 
-                <!-- Зона результату -->
+                <!-- Result & Logs Area -->
                 <div id="result-area" class="mt-6 hidden">
-                    <h3 class="text-sm font-semibold text-slate-300 mb-2">Статус обробки:</h3>
+                    <h3 class="text-sm font-semibold text-slate-300 mb-2">Processing Status:</h3>
                     <div id="log" class="bg-slate-900 border border-slate-800 rounded-lg p-4 text-xs font-mono text-emerald-400 h-32 overflow-y-auto"></div>
                 </div>
             </div>
 
-            <!-- Футер робочої зони -->
+            <!-- Working Area Footer -->
             <div class="mt-8 pt-4 border-t border-slate-800/80 flex justify-between items-center text-xs text-slate-500">
-                <span>Обробка в пам'яті браузера (SecureClient Core)</span>
-                <button id="process-btn" onclick="processCSV()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl font-medium transition shadow-lg shadow-indigo-600/20 disabled:opacity-50" disabled>Обробити виписку</button>
+                <span>Zero infrastructure cost / Browser memory processing</span>
+                <button id="process-btn" onclick="processCSV()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl font-medium transition shadow-lg shadow-indigo-600/20 disabled:opacity-50" disabled>Process Statement</button>
             </div>
 
         </div>
     </main>
 
-    <!-- Логіка обробки -->
+    <!-- Logic Script -->
     <script>
         let selectedFile = null;
 
         const modulesData = {
-            1: { title: "Financial Statement Transformer", desc: "Завантажте банківську виписку у форматі CSV для локального очищення та приведення до стандартного формату." },
-            2: { title: "Marketplace Feed & CSV Sanitizer", desc: "Швидко знаходьте та виправляйте биті рядки, пробіли чи помилки кодування у товарних прайсах." },
-            3: { title: "VAT / Tax ID Batch Validator", desc: "Пакетна перевірка європейських податкових номерів за офіційними правилами." },
-            4: { title: "Document & Table Extractor", desc: "Витягуйте табличні дані з PDF-файлів у таблиці без зсуву комірок." },
-            5: { title: "B2B Data Sanitizer", desc: "Очищуйте та нормалізуйте бази даних клієнтів (телефони, регістри, дублікати) перед імпортом у CRM." }
+            1: { title: "Financial Statement Transformer", desc: "Standardize and clean bank statements locally without uploading data to external servers." },
+            2: { title: "Marketplace Feed & CSV Sanitizer", desc: "Quickly detect and fix broken rows, spacing issues, or encoding errors in e-commerce product feeds." },
+            3: { title: "VAT / Tax ID Batch Validator", desc: "Batch validate EU tax identification numbers securely against compliance rules." },
+            4: { title: "Document & Table Extractor", desc: "Extract structured tabular data from PDF files directly inside your browser." },
+            5: { title: "B2B Data Sanitizer", desc: "Clean, normalize, and deduplicate CRM contact records before importing them into production systems." }
         };
 
         function switchModule(id) {
@@ -87,18 +87,18 @@
             document.getElementById('mod-desc').innerText = modulesData[id].desc;
             document.getElementById('result-area').classList.add('hidden');
             selectedFile = null;
-            document.getElementById('file-label').innerText = "Натисніть сюди або перетягніть CSV файл";
+            document.getElementById('file-label').innerText = "Click here or drag & drop your CSV file";
             document.getElementById('process-btn').disabled = true;
         }
 
         function handleFile(input) {
             if(input.files && input.files[0]) {
                 selectedFile = input.files[0];
-                document.getElementById('file-label').innerHTML = `Обрано файл: <b class="text-indigo-400">${selectedFile.name}</b>`;
+                document.getElementById('file-label').innerHTML = `Selected file: <b class="text-indigo-400">${selectedFile.name}</b>`;
                 document.getElementById('process-btn').disabled = false;
                 const log = document.getElementById('log');
                 document.getElementById('result-area').classList.remove('hidden');
-                log.innerHTML = `> Файл успішно завантажено в оперативну пам'ять браузера.<br>> Розмір: ${selectedFile.size} байт.<br>> Готовий до конвертації.`;
+                log.innerHTML = `> File successfully loaded into browser memory.<br>> Size: ${selectedFile.size} bytes.<br>> Ready for transformation.`;
             }
         }
 
@@ -110,10 +110,9 @@
                 const lines = text.split('\n');
                 const log = document.getElementById('log');
                 
-                // Простий локальний аналіз рядків
-                log.innerHTML += `<br>> Знайдено рядків у виписці: <b>${lines.length}</b>`;
-                log.innerHTML += `<br>> <span class="text-indigo-400">Успішно!</span> Кодування нормалізовано, зайві пробіли видалено.`;
-                log.innerHTML += `<br>> Готово до вивантаження у стандартному форматі бухгалтерського обліку.`;
+                log.innerHTML += `<br>> Total lines detected: <b>${lines.length}</b>`;
+                log.innerHTML += `<br>> <span class="text-indigo-400">Success!</span> Encoding normalized, whitespace cleaned.`;
+                log.innerHTML += `<br>> Ready to export standardized accounting format.`;
             };
             reader.readAsText(selectedFile, 'utf-8');
         }
