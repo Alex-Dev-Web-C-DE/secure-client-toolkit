@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SecureClient Toolkit — Professional B2B Utilities</title>
+    <title id="page-title">SecureClient Toolkit — Professional Privacy-First B2B Utilities</title>
+    <meta name="description" id="page-desc" content="Process, sanitize, and validate financial statements, CRM records, and VAT IDs 100% locally in your browser with zero server uploads.">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = { darkMode: 'class' };
@@ -15,6 +16,8 @@
     </script>
     <!-- JSZip CDN for Batch Processing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- SheetJS (xlsx) for Excel & XML support -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body class="bg-slate-900 dark:bg-slate-900 text-slate-100 min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white transition-colors duration-200">
 
@@ -68,10 +71,22 @@
                 <span class="truncate">Data Anonymizer</span>
             </button>
 
-            <!-- History Section -->
+            <!-- Workflows & Presets Section -->
             <div class="mt-6 pt-4 border-t border-slate-800">
+                <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-1">Saved Workflows</h3>
+                <div class="flex space-x-2 mb-2">
+                    <input type="text" id="workflow-name" placeholder="Preset name" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-xs text-slate-200">
+                    <button onclick="saveWorkflow()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1 rounded-lg text-xs font-medium">Save</button>
+                </div>
+                <div id="workflows-box" class="bg-slate-950 border border-slate-800/80 rounded-xl p-2 text-xs text-slate-400 space-y-1 max-h-24 overflow-y-auto">
+                    <span class="text-slate-600 italic">No saved workflows</span>
+                </div>
+            </div>
+
+            <!-- History Section -->
+            <div class="mt-4 pt-4 border-t border-slate-800">
                 <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-1">Session History</h3>
-                <div id="history-box" class="bg-slate-950 border border-slate-800/80 rounded-xl p-3 text-xs text-slate-400 space-y-1.5 max-h-36 overflow-y-auto font-mono">
+                <div id="history-box" class="bg-slate-950 border border-slate-800/80 rounded-xl p-3 text-xs text-slate-400 space-y-1.5 max-h-28 overflow-y-auto font-mono">
                     <span class="text-slate-600 italic">No operations yet</span>
                 </div>
             </div>
@@ -82,9 +97,14 @@
             
             <div>
                 <!-- Module Header -->
-                <div class="mb-6 pb-4 border-b border-slate-800/60">
-                    <h2 id="mod-title" class="text-2xl font-bold text-white">Financial Statement Transformer</h2>
-                    <p id="mod-desc" class="text-slate-400 text-sm mt-1">Standardize and clean bank statements locally without uploading data to external servers.</p>
+                <div class="mb-6 pb-4 border-b border-slate-800/60 flex justify-between items-start">
+                    <div>
+                        <h2 id="mod-title" class="text-2xl font-bold text-white">Financial Statement Transformer</h2>
+                        <p id="mod-desc" class="text-slate-400 text-sm mt-1">Standardize and clean bank statements locally without uploading data to external servers.</p>
+                    </div>
+                    <button onclick="loadSampleData()" class="text-xs bg-slate-800 hover:bg-slate-700 text-indigo-300 px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center space-x-1">
+                        <span>⚡ Load Sample Data</span>
+                    </button>
                 </div>
 
                 <!-- Advanced Options Toolbar -->
@@ -108,18 +128,25 @@
                         <label class="block text-xs font-medium text-slate-400 mb-1">Output Format</label>
                         <select id="opt-format" onchange="savePreferences()" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
                             <option value="csv">CSV (Spreadsheet)</option>
+                            <option value="xlsx">Excel (.xlsx)</option>
                             <option value="json">JSON (API / Dev)</option>
                         </select>
                     </div>
                 </div>
 
-                <!-- Custom Masking Input (Only visible for Module 6) -->
+                <!-- Custom Masking Input (Module 6) -->
                 <div id="custom-mask-container" class="mb-6 bg-slate-900/60 p-4 rounded-xl border border-slate-800 hidden">
                     <label class="block text-xs font-medium text-slate-400 mb-1">Custom Keyword / Regex to Mask</label>
                     <input type="text" id="opt-custom-mask" placeholder="e.g. PROJECT_X or SecretID" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
                 </div>
 
-                <!-- Enhanced Drag & Drop Box (Supports Multiple Files) -->
+                <!-- Visual Column Mapper (Hidden until file is loaded) -->
+                <div id="column-mapper-container" class="mb-6 bg-slate-900/60 p-4 rounded-xl border border-slate-800 hidden">
+                    <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Visual Column Mapping</h3>
+                    <div id="mapping-fields" class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs"></div>
+                </div>
+
+                <!-- Enhanced Drag & Drop Box -->
                 <div id="drop-zone" 
                      class="border-2 border-dashed border-slate-700/80 hover:border-indigo-500 transition rounded-xl p-8 text-center cursor-pointer bg-slate-900/30 group relative"
                      ondragover="handleDragOver(event)" 
@@ -127,9 +154,9 @@
                      ondrop="handleDrop(event)" 
                      onclick="document.getElementById('fileInput').click()">
                     <svg class="w-12 h-12 mx-auto text-slate-500 group-hover:text-indigo-400 transition mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-                    <p class="text-sm font-medium text-slate-300 group-hover:text-white transition" id="file-label">Click here or drag & drop multiple files (Batch Ready)</p>
-                    <p class="text-xs text-slate-500 mt-1">Processed entirely inside browser memory (Multiple files will be zipped)</p>
-                    <input type="file" id="fileInput" class="hidden" multiple accept=".csv,.txt,.tsv,.pdf" onchange="handleFileInput(this)">
+                    <p class="text-sm font-medium text-slate-300 group-hover:text-white transition" id="file-label">Click here or drag & drop files (CSV, Excel, XML, PDF)</p>
+                    <p class="text-xs text-slate-500 mt-1">Processed entirely inside browser RAM (Batch & Excel ready)</p>
+                    <input type="file" id="fileInput" class="hidden" multiple accept=".csv,.txt,.tsv,.pdf,.xlsx,.xls,.xml" onchange="handleFileInput(this)">
                 </div>
 
                 <!-- Result & Preview Area -->
@@ -138,21 +165,19 @@
                         <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Live Preview & Execution Metrics</h3>
                         <span id="metrics-badge" class="text-xs bg-indigo-950 text-indigo-300 px-2.5 py-1 rounded-md border border-indigo-800/50">Ready</span>
                     </div>
-                    <!-- Table Preview Container -->
                     <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden max-h-48 overflow-y-auto">
                         <table id="preview-table" class="w-full text-left border-collapse text-xs">
                             <thead id="preview-head" class="bg-slate-950 text-slate-400 border-b border-slate-800 sticky top-0"></thead>
                             <tbody id="preview-body" class="divide-y divide-slate-800/60 font-mono text-slate-300"></tbody>
                         </table>
                     </div>
-                    <!-- Logs Container -->
                     <div id="log" class="bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs font-mono text-emerald-400 h-20 overflow-y-auto"></div>
                 </div>
             </div>
 
             <!-- Working Area Footer -->
             <div class="mt-8 pt-4 border-t border-slate-800/80 flex justify-between items-center text-xs text-slate-500">
-                <span id="version-label">SecureClient Engine v3.0 (Batch Enabled)</span>
+                <span id="version-label">SecureClient Engine v4.0 (Enterprise Pro)</span>
                 <button id="process-btn" onclick="currentAction()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-medium transition shadow-lg shadow-indigo-600/25 disabled:opacity-40 disabled:cursor-not-allowed" disabled>Process Data</button>
             </div>
 
@@ -163,32 +188,31 @@
     <script>
         let currentModuleId = 1;
         let selectedFiles = [];
-        let processedResults = []; // Array of {name, content}
+        let processedResults = [];
         let outputFilename = "processed_data.csv";
         let historyLog = [];
+        let workflows = JSON.parse(localStorage.getItem('sc_workflows') || '{}');
 
         const modulesData = {
-            1: { title: "Financial Statement Transformer", desc: "Standardize and clean bank statements locally without uploading data to external servers.", btnText: "Process & Clean Statement", accept: ".csv,.txt,.tsv" },
-            2: { title: "Marketplace Feed & CSV Sanitizer", desc: "Quickly detect and fix broken rows, spacing issues, or encoding errors in e-commerce product feeds.", btnText: "Sanitize Product Feed", accept: ".csv,.txt,.tsv" },
-            3: { title: "VAT / Tax ID Batch Validator", desc: "Batch validate EU tax identification numbers securely against compliance rules.", btnText: "Validate VAT IDs", accept: ".csv,.txt,.tsv" },
-            4: { title: "PDF Table Extractor", desc: "Extract structured text and tables from local PDF documents directly inside your browser.", btnText: "Extract PDF Data", accept: ".pdf" },
-            5: { title: "B2B Data Sanitizer", desc: "Clean, normalize, and deduplicate CRM contact records before importing them into production systems.", btnText: "Clean CRM Records", accept: ".csv,.txt,.tsv" },
-            6: { title: "Data Anonymizer & Masker", desc: "Automatically mask sensitive PII fields (emails, phones) locally before exporting.", btnText: "Anonymize Data", accept: ".csv,.txt,.tsv" }
+            1: { title: "Financial Statement Transformer", desc: "Standardize and clean bank statements locally without uploading data to external servers.", btnText: "Process & Clean Statement", accept: ".csv,.txt,.tsv,.xlsx,.xls", seoTitle: "Secure Bank Statement Transformer & Cleaner", seoDesc: "Clean and standardize financial statements locally in browser." },
+            2: { title: "Marketplace Feed & CSV Sanitizer", desc: "Quickly detect and fix broken rows, spacing issues, or encoding errors in e-commerce feeds.", btnText: "Sanitize Product Feed", accept: ".csv,.txt,.tsv,.xml", seoTitle: "Marketplace Feed & XML/CSV Sanitizer", seoDesc: "Fix broken product feeds and XML/CSV files securely." },
+            3: { title: "VAT / Tax ID Batch Validator", desc: "Batch validate EU tax identification numbers securely against compliance rules.", btnText: "Validate VAT IDs", accept: ".csv,.txt,.tsv,.xlsx,.xls", seoTitle: "Bulk EU VAT ID Batch Validator", seoDesc: "Validate European VAT numbers offline in browser." },
+            4: { title: "PDF Table Extractor", desc: "Extract structured text and tables from local PDF documents directly inside your browser.", btnText: "Extract PDF Data", accept: ".pdf", seoTitle: "Local PDF Table & Text Extractor", seoDesc: "Extract tables and text from PDFs securely client-side." },
+            5: { title: "B2B Data Sanitizer", desc: "Clean, normalize, and deduplicate CRM contact records before importing them into production systems.", btnText: "Clean CRM Records", accept: ".csv,.txt,.tsv,.xlsx,.xls", seoTitle: "B2B CRM Data Sanitizer & Deduplicator", seoDesc: "Deduplicate and clean CRM lists securely." },
+            6: { title: "Data Anonymizer & Masker", desc: "Automatically mask sensitive PII fields (emails, phones) locally before exporting.", btnText: "Anonymize Data", accept: ".csv,.txt,.tsv,.xlsx,.xls", seoTitle: "PII Data Anonymizer & Masker", seoDesc: "Mask emails and phone numbers locally." }
         };
 
         window.addEventListener('DOMContentLoaded', () => {
-            const savedDelim = localStorage.getItem('sc_delim');
-            const savedEnc = localStorage.getItem('sc_enc');
-            const savedFmt = localStorage.getItem('sc_fmt');
-            if(savedDelim) document.getElementById('opt-delimiter').value = savedDelim;
-            if(savedEnc) document.getElementById('opt-encoding').value = savedEnc;
-            if(savedFmt) document.getElementById('opt-format').value = savedFmt;
-            
-            // Load theme
-            if(localStorage.getItem('sc_theme') === 'light') {
-                document.documentElement.classList.remove('dark');
-            }
+            loadPreferences();
+            renderWorkflows();
         });
+
+        function loadPreferences() {
+            if(localStorage.getItem('sc_delim')) document.getElementById('opt-delimiter').value = localStorage.getItem('sc_delim');
+            if(localStorage.getItem('sc_enc')) document.getElementById('opt-encoding').value = localStorage.getItem('sc_enc');
+            if(localStorage.getItem('sc_fmt')) document.getElementById('opt-format').value = localStorage.getItem('sc_fmt');
+            if(localStorage.getItem('sc_theme') === 'light') document.documentElement.classList.remove('dark');
+        }
 
         function toggleTheme() {
             const isDark = document.documentElement.classList.toggle('dark');
@@ -211,18 +235,19 @@
                     btn.className = "w-full text-left px-4 py-3 rounded-xl bg-slate-800/60 text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center space-x-3";
                 }
             }
-            document.getElementById('mod-title').innerText = modulesData[id].title;
-            document.getElementById('mod-desc').innerText = modulesData[id].desc;
-            document.getElementById('fileInput').accept = modulesData[id].accept;
+            const mod = modulesData[id];
+            document.getElementById('mod-title').innerText = mod.title;
+            document.getElementById('mod-desc').innerText = mod.desc;
+            document.getElementById('fileInput').accept = mod.accept;
+            document.getElementById('page-title').innerText = mod.seoTitle + " — SecureClient Toolkit";
+            document.getElementById('page-desc').content = mod.seoDesc;
             document.getElementById('custom-mask-container').classList.toggle('hidden', id !== 6);
+            document.getElementById('column-mapper-container').classList.add('hidden');
             document.getElementById('result-area').classList.add('hidden');
-            selectedFiles = [];
-            processedResults = [];
-            document.getElementById('file-label').innerText = "Click here or drag & drop multiple files (Batch Ready)";
+            selectedFiles = []; processedResults = [];
+            document.getElementById('file-label').innerText = "Click here or drag & drop files (" + mod.accept + ")";
             const btn = document.getElementById('process-btn');
-            btn.disabled = true;
-            btn.innerText = modulesData[id].btnText;
-            btn.onclick = currentAction;
+            btn.disabled = true; btn.innerText = mod.btnText; btn.onclick = currentAction;
         }
 
         function handleDragOver(e) { e.preventDefault(); document.getElementById('drop-zone').classList.add('border-indigo-500', 'bg-indigo-950/20'); }
@@ -238,16 +263,71 @@
 
         function processFileObjects(files) {
             selectedFiles = Array.from(files);
-            let totalSize = selectedFiles.reduce((acc, f) => acc + f.size, 0);
-            if(totalSize > 30 * 1024 * 1024) {
-                alert("Total files size exceeds 30MB browser RAM limit.");
-                return;
-            }
-            document.getElementById('file-label').innerHTML = `Selected files: <b class="text-indigo-400">${selectedFiles.length} file(s)</b> (${(totalSize/1024).toFixed(1)} KB)`;
+            document.getElementById('file-label').innerHTML = `Selected files: <b class="text-indigo-400">${selectedFiles.length} file(s)</b>`;
             document.getElementById('process-btn').disabled = false;
-            const log = document.getElementById('log');
             document.getElementById('result-area').classList.remove('hidden');
-            log.innerHTML = `> Loaded ${selectedFiles.length} file(s) into RAM.<br>> Ready under Module #${currentModuleId}.`;
+            document.getElementById('log').innerHTML = `> Loaded ${selectedFiles.length} file(s) into RAM.<br>> Ready for processing.`;
+            
+            // Setup Column Mapper if it's a tabular file
+            if(selectedFiles[0] && !selectedFiles[0].name.endsWith('.pdf')) {
+                setupColumnMapper(selectedFiles[0]);
+            }
+        }
+
+        async function setupColumnMapper(file) {
+            const text = await readFileAsText(file, 'utf-8');
+            const firstLine = text.split(/\r\n|\n/)[0];
+            if(firstLine) {
+                const delimiter = document.getElementById('opt-delimiter').value;
+                const cols = firstLine.split(delimiter).map(c => c.replace(/["']/g, '').trim());
+                const container = document.getElementById('mapping-fields');
+                container.innerHTML = '';
+                cols.slice(0, 4).forEach((col, idx) => {
+                    container.innerHTML += `<div><label class="block text-slate-500 mb-1">${col}</label><input type="text" data-original="${col}" class="map-input w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-slate-200" value="${col}"></div>`;
+                });
+                document.getElementById('column-mapper-container').classList.remove('hidden');
+            }
+        }
+
+        function loadSampleData() {
+            let sampleText = "ID,Client_Name,Email,Phone,VAT_ID\n1,Acme Corp,info@acme.com,+123456789,DE123456789\n2,Global Logistic,contact@global.org,+987654321,FR98765432101\n3,Test Company,test@test.com,555-0199,INVALIDVAT";
+            const blob = new Blob([sampleText], { type: 'text/csv' });
+            const sampleFile = new File([blob], "sample_dataset.csv", { type: "text/csv" });
+            processFileObjects([sampleFile]);
+            document.getElementById('log').innerHTML += `<br>> <span class="text-indigo-400">Sample dataset loaded successfully!</span>`;
+        }
+
+        function saveWorkflow() {
+            const name = document.getElementById('workflow-name').value.trim();
+            if(!name) return alert("Enter workflow name");
+            workflows[name] = {
+                delimiter: document.getElementById('opt-delimiter').value,
+                encoding: document.getElementById('opt-encoding').value,
+                format: document.getElementById('opt-format').value
+            };
+            localStorage.setItem('sc_workflows', JSON.stringify(workflows));
+            renderWorkflows();
+            alert("Workflow saved!");
+        }
+
+        function renderWorkflows() {
+            const box = document.getElementById('workflows-box');
+            if(Object.keys(workflows).length === 0) { box.innerHTML = '<span class="text-slate-600 italic">No saved workflows</span>'; return; }
+            box.innerHTML = '';
+            for(let name in workflows) {
+                box.innerHTML += `<div class="flex justify-between items-center bg-slate-900 p-1.5 rounded"><span>${name}</span><button onclick="applyWorkflow('${name}')" class="text-indigo-400 hover:underline">Load</button></div>`;
+            }
+        }
+
+        function applyWorkflow(name) {
+            const w = workflows[name];
+            if(w) {
+                document.getElementById('opt-delimiter').value = w.delimiter;
+                document.getElementById('opt-encoding').value = w.encoding;
+                document.getElementById('opt-format').value = w.format;
+                savePreferences();
+                alert(`Workflow "${name}" applied!`);
+            }
         }
 
         async function currentAction() {
@@ -257,8 +337,16 @@
             const format = document.getElementById('opt-format').value;
 
             for(let file of selectedFiles) {
-                if(currentModuleId === 4) {
-                    // PDF processing
+                if(file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                    // Handle Excel via SheetJS
+                    const data = await file.arrayBuffer();
+                    const workbook = XLSX.read(data);
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const csvText = XLSX.utils.sheet_to_csv(worksheet);
+                    processTextContent(file.name, csvText, format);
+                } else if(file.name.endsWith('.pdf')) {
+                    // Handle PDF via PDF.js
                     try {
                         const buffer = await file.arrayBuffer();
                         const pdf = await pdfjsLib.getDocument(new Uint8Array(buffer)).promise;
@@ -268,23 +356,12 @@
                             const text = (await page.getTextContent()).items.map(it => it.str).join(' ');
                             if(text.trim()) rows.push(`${i},"${text.replace(/"/g, '""')}"`);
                         }
-                        let formatted = formatContent(rows, format);
-                        processedResults.push({ name: file.name.replace(/\.[^/.]+$/, "") + (format === 'json' ? '.json' : '.csv'), content: formatted });
-                    } catch(err) {
-                        console.error(err);
-                    }
+                        finalizeResult(file.name, rows.join('\n'), format);
+                    } catch(err) { console.error(err); }
                 } else {
-                    // Text/CSV processing
-                    const text = await readFileAsText(file, encoding);
-                    let processedLines = [];
-                    if(currentModuleId === 1) processedLines = processStatementLogic(text);
-                    else if(currentModuleId === 2) processedLines = processFeedLogic(text);
-                    else if(currentModuleId === 3) processedLines = processVATLogic(text);
-                    else if(currentModuleId === 5) processedLines = processCRMLogic(text);
-                    else if(currentModuleId === 6) processedLines = processAnonymizerLogic(text);
-
-                    let formatted = formatContent(processedLines, format);
-                    processedResults.push({ name: file.name.replace(/\.[^/.]+$/, "") + (format === 'json' ? '.json' : '.csv'), content: formatted });
+                    // Text/CSV/XML
+                    let text = await readFileAsText(file, encoding);
+                    processTextContent(file.name, text, format);
                 }
             }
 
@@ -294,6 +371,39 @@
                 addHistoryEntry(modulesData[currentModuleId].title, selectedFiles.length);
                 prepareDownload();
             }
+        }
+
+        function processTextContent(filename, text, format) {
+            let processedLines = [];
+            if(currentModuleId === 1) processedLines = processStatementLogic(text);
+            else if(currentModuleId === 2) processedLines = processFeedLogic(text);
+            else if(currentModuleId === 3) processedLines = processVATLogic(text);
+            else if(currentModuleId === 5) processedLines = processCRMLogic(text);
+            else if(currentModuleId === 6) processedLines = processAnonymizerLogic(text);
+            else processedLines = text.split(/\r\n|\n/);
+
+            finalizeResult(filename, processedLines.join('\n'), format);
+        }
+
+        function finalizeResult(filename, contentLines, format) {
+            let ext = format === 'json' ? '.json' : (format === 'xlsx' ? '.xlsx' : '.csv');
+            let finalName = filename.replace(/\.[^/.]+$/, "") + ext;
+            let formattedContent = contentLines;
+
+            if(format === 'json') {
+                const delimiter = document.getElementById('opt-delimiter').value;
+                const rows = contentLines.split(/\r\n|\n/);
+                let headers = rows[0] ? rows[0].split(delimiter).map(h => h.replace(/["']/g, '').trim()) : [];
+                let jsonArr = [];
+                for(let i = 1; i < rows.length; i++) {
+                    let vals = rows[i].split(delimiter);
+                    let obj = {};
+                    headers.forEach((h, idx) => { obj[h || `col_${idx+1}`] = vals[idx] ? vals[idx].replace(/["']/g, '').trim() : ""; });
+                    jsonArr.push(obj);
+                }
+                formattedContent = JSON.stringify(jsonArr, null, 2);
+            }
+            processedResults.push({ name: finalName, content: formattedContent, raw: contentLines });
         }
 
         function readFileAsText(file, encoding) {
@@ -356,32 +466,15 @@
             return masked;
         }
 
-        function formatContent(lines, format) {
-            const delimiter = document.getElementById('opt-delimiter').value;
-            if(format === 'json') {
-                let headers = lines[0] ? lines[0].split(delimiter).map(h => h.replace(/["']/g, '').trim()) : [];
-                let jsonArr = [];
-                for(let i = 1; i < lines.length; i++) {
-                    let vals = lines[i].split(delimiter);
-                    let obj = {};
-                    headers.forEach((h, idx) => { obj[h || `col_${idx+1}`] = vals[idx] ? vals[idx].replace(/["']/g, '').trim() : ""; });
-                    jsonArr.push(obj);
-                }
-                return JSON.stringify(jsonArr, null, 2);
-            } else {
-                return lines.join('\n');
-            }
-        }
-
         function renderPreview(content, format) {
             const head = document.getElementById('preview-head');
             const body = document.getElementById('preview-body');
             head.innerHTML = ''; body.innerHTML = '';
-            if(format === 'json') {
+            if(format === 'json' || format === 'xlsx') {
                 let tr = document.createElement('tr');
                 let td = document.createElement('td');
                 td.className = "px-3 py-2 text-indigo-400";
-                td.innerText = "JSON Preview (First items rendered as text)";
+                td.innerText = `${format.toUpperCase()} Preview ready for download`;
                 tr.appendChild(td); head.appendChild(tr);
                 return;
             }
@@ -429,11 +522,21 @@
 
         async function downloadResult() {
             if(processedResults.length === 0) return;
+            const format = document.getElementById('opt-format').value;
+
             if(processedResults.length === 1) {
                 const res = processedResults[0];
-                const mime = res.name.endsWith('.json') ? 'application/json;charset=utf-8;' : 'text/csv;charset=utf-8;';
-                const blob = new Blob([res.content], { type: mime });
-                triggerDownload(blob, res.name);
+                if(format === 'xlsx') {
+                    // Export as real Excel file using SheetJS
+                    const ws = XLSX.utils.aoa_to_sheet(res.raw.split('\n').map(r => r.split(document.getElementById('opt-delimiter').value)));
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, "ProcessedData");
+                    XLSX.writeFile(wb, res.name);
+                } else {
+                    const mime = res.name.endsWith('.json') ? 'application/json;charset=utf-8;' : 'text/csv;charset=utf-8;';
+                    const blob = new Blob([res.content], { type: mime });
+                    triggerDownload(blob, res.name);
+                }
             } else {
                 const zip = new JSZip();
                 processedResults.forEach(res => {
