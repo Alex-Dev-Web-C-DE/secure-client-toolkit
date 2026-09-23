@@ -43,12 +43,12 @@
                     <svg class="w-12 h-12 mx-auto text-slate-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
                     <p class="text-sm font-medium text-slate-300" id="file-label">Click here or drag & drop your CSV file</p>
                     <p class="text-xs text-slate-500 mt-1">Secure: Files never leave your device</p>
-                    <input type="file" id="fileInput" class="hidden" accept=".csv" onchange="handleFile(this)">
+                    <input type="file" id="fileInput" class="hidden" accept=".csv,.txt" onchange="handleFile(this)">
                 </div>
 
                 <!-- Result & Logs Area -->
                 <div id="result-area" class="mt-6 hidden">
-                    <h3 class="text-sm font-semibold text-slate-300 mb-2">Processing Status:</h3>
+                    <h3 class="text-sm font-semibold text-slate-300 mb-2">Processing Status & Logs:</h3>
                     <div id="log" class="bg-slate-900 border border-slate-800 rounded-lg p-4 text-xs font-mono text-emerald-400 h-32 overflow-y-auto"></div>
                 </div>
             </div>
@@ -56,7 +56,7 @@
             <!-- Working Area Footer -->
             <div class="mt-8 pt-4 border-t border-slate-800/80 flex justify-between items-center text-xs text-slate-500">
                 <span>Zero infrastructure cost / Browser memory processing</span>
-                <button id="process-btn" onclick="processCSV()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl font-medium transition shadow-lg shadow-indigo-600/20 disabled:opacity-50" disabled>Process Statement</button>
+                <button id="process-btn" onclick="processCSV()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl font-medium transition shadow-lg shadow-indigo-600/20 disabled:opacity-50" disabled>Process & Clean Statement</button>
             </div>
 
         </div>
@@ -65,6 +65,8 @@
     <!-- Logic Script -->
     <script>
         let selectedFile = null;
+        let processedContent = "";
+        let outputFilename = "transformed_statement.csv";
 
         const modulesData = {
             1: { title: "Financial Statement Transformer", desc: "Standardize and clean bank statements locally without uploading data to external servers." },
@@ -87,18 +89,23 @@
             document.getElementById('mod-desc').innerText = modulesData[id].desc;
             document.getElementById('result-area').classList.add('hidden');
             selectedFile = null;
+            processedContent = "";
             document.getElementById('file-label').innerText = "Click here or drag & drop your CSV file";
-            document.getElementById('process-btn').disabled = true;
+            const btn = document.getElementById('process-btn');
+            btn.disabled = true;
+            btn.innerText = "Process & Clean Statement";
+            btn.onclick = processCSV;
         }
 
         function handleFile(input) {
             if(input.files && input.files[0]) {
                 selectedFile = input.files[0];
+                outputFilename = "cleaned_" + selectedFile.name;
                 document.getElementById('file-label').innerHTML = `Selected file: <b class="text-indigo-400">${selectedFile.name}</b>`;
                 document.getElementById('process-btn').disabled = false;
                 const log = document.getElementById('log');
                 document.getElementById('result-area').classList.remove('hidden');
-                log.innerHTML = `> File successfully loaded into browser memory.<br>> Size: ${selectedFile.size} bytes.<br>> Ready for transformation.`;
+                log.innerHTML = `> File loaded into local RAM.<br>> Size: ${selectedFile.size} bytes.<br>> Ready to execute sanitization rules.`;
             }
         }
 
@@ -107,14 +114,45 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 const text = e.target.result;
-                const lines = text.split('\n');
+                const lines = text.split(/\r\n|\n/);
                 const log = document.getElementById('log');
                 
-                log.innerHTML += `<br>> Total lines detected: <b>${lines.length}</b>`;
-                log.innerHTML += `<br>> <span class="text-indigo-400">Success!</span> Encoding normalized, whitespace cleaned.`;
-                log.innerHTML += `<br>> Ready to export standardized accounting format.`;
+                let cleanedLines = [];
+                let emptyCount = 0;
+
+                lines.forEach(line => {
+                    const trimmed = line.trim();
+                    if(trimmed.length > 0) {
+                        cleanedLines.push(trimmed.replace(/\s+/g, ' '));
+                    } else {
+                        emptyCount++;
+                    }
+                });
+
+                processedContent = cleanedLines.join('\n');
+
+                log.innerHTML += `<br>> Total rows analyzed: <b>${lines.length}</b>`;
+                log.innerHTML += `<br>> Empty rows removed: <b class="text-amber-400">${emptyCount}</b>`;
+                log.innerHTML += `<br>> <span class="text-indigo-400">Success!</span> Whitespace normalized and formatting secured.`;
+                
+                const btn = document.getElementById('process-btn');
+                btn.innerText = "Download Cleaned CSV";
+                btn.onclick = downloadResult;
             };
             reader.readAsText(selectedFile, 'utf-8');
+        }
+
+        function downloadResult() {
+            if(!processedContent) return;
+            const blob = new Blob([processedContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = outputFilename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         }
     </script>
 </body>
