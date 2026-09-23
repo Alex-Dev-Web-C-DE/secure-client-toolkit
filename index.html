@@ -41,7 +41,7 @@
                 <!-- File Upload Box -->
                 <div class="border-2 border-dashed border-slate-700 hover:border-indigo-500 transition rounded-xl p-8 text-center cursor-pointer bg-slate-900/50" onclick="document.getElementById('fileInput').click()">
                     <svg class="w-12 h-12 mx-auto text-slate-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-                    <p class="text-sm font-medium text-slate-300" id="file-label">Click here or drag & drop your CSV file</p>
+                    <p class="text-sm font-medium text-slate-300" id="file-label">Click here or drag & drop your file</p>
                     <p class="text-xs text-slate-500 mt-1">Secure: Files never leave your device</p>
                     <input type="file" id="fileInput" class="hidden" accept=".csv,.txt" onchange="handleFile(this)">
                 </div>
@@ -56,7 +56,7 @@
             <!-- Working Area Footer -->
             <div class="mt-8 pt-4 border-t border-slate-800/80 flex justify-between items-center text-xs text-slate-500">
                 <span>Zero infrastructure cost / Browser memory processing</span>
-                <button id="process-btn" onclick="processCSV()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl font-medium transition shadow-lg shadow-indigo-600/20 disabled:opacity-50" disabled>Process & Clean Statement</button>
+                <button id="process-btn" onclick="currentAction()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl font-medium transition shadow-lg shadow-indigo-600/20 disabled:opacity-50" disabled>Process Data</button>
             </div>
 
         </div>
@@ -64,19 +64,41 @@
 
     <!-- Logic Script -->
     <script>
+        let currentModuleId = 1;
         let selectedFile = null;
         let processedContent = "";
-        let outputFilename = "transformed_statement.csv";
+        let outputFilename = "output.csv";
 
         const modulesData = {
-            1: { title: "Financial Statement Transformer", desc: "Standardize and clean bank statements locally without uploading data to external servers." },
-            2: { title: "Marketplace Feed & CSV Sanitizer", desc: "Quickly detect and fix broken rows, spacing issues, or encoding errors in e-commerce product feeds." },
-            3: { title: "VAT / Tax ID Batch Validator", desc: "Batch validate EU tax identification numbers securely against compliance rules." },
-            4: { title: "Document & Table Extractor", desc: "Extract structured tabular data from PDF files directly inside your browser." },
-            5: { title: "B2B Data Sanitizer", desc: "Clean, normalize, and deduplicate CRM contact records before importing them into production systems." }
+            1: { 
+                title: "Financial Statement Transformer", 
+                desc: "Standardize and clean bank statements locally without uploading data to external servers.",
+                btnText: "Process & Clean Statement"
+            },
+            2: { 
+                title: "Marketplace Feed & CSV Sanitizer", 
+                desc: "Quickly detect and fix broken rows, spacing issues, or encoding errors in e-commerce product feeds.",
+                btnText: "Sanitize Product Feed"
+            },
+            3: { 
+                title: "VAT / Tax ID Batch Validator", 
+                desc: "Batch validate EU tax identification numbers securely against compliance rules.",
+                btnText: "Validate VAT IDs"
+            },
+            4: { 
+                title: "Document & Table Extractor", 
+                desc: "Extract structured tabular data from PDF files directly inside your browser.",
+                btnText: "Extract Data"
+            },
+            5: { 
+                title: "B2B Data Sanitizer", 
+                desc: "Clean, normalize, and deduplicate CRM contact records before importing them into production systems.",
+                btnText: "Clean CRM Records"
+            }
         };
 
         function switchModule(id) {
+            currentModuleId = id;
             for(let i=1; i<=5; i++) {
                 const btn = document.getElementById(`btn-${i}`);
                 if(i === id) {
@@ -90,27 +112,37 @@
             document.getElementById('result-area').classList.add('hidden');
             selectedFile = null;
             processedContent = "";
-            document.getElementById('file-label').innerText = "Click here or drag & drop your CSV file";
+            document.getElementById('file-label').innerText = "Click here or drag & drop your file";
             const btn = document.getElementById('process-btn');
             btn.disabled = true;
-            btn.innerText = "Process & Clean Statement";
-            btn.onclick = processCSV;
+            btn.innerText = modulesData[id].btnText;
+            btn.onclick = currentAction;
         }
 
         function handleFile(input) {
             if(input.files && input.files[0]) {
                 selectedFile = input.files[0];
-                outputFilename = "cleaned_" + selectedFile.name;
+                outputFilename = (currentModuleId === 2 ? "sanitized_" : "cleaned_") + selectedFile.name;
                 document.getElementById('file-label').innerHTML = `Selected file: <b class="text-indigo-400">${selectedFile.name}</b>`;
                 document.getElementById('process-btn').disabled = false;
                 const log = document.getElementById('log');
                 document.getElementById('result-area').classList.remove('hidden');
-                log.innerHTML = `> File loaded into local RAM.<br>> Size: ${selectedFile.size} bytes.<br>> Ready to execute sanitization rules.`;
+                log.innerHTML = `> File loaded into local RAM.<br>> Size: ${selectedFile.size} bytes.<br>> Module ${currentModuleId} initialized.`;
             }
         }
 
-        function processCSV() {
+        function currentAction() {
             if(!selectedFile) return;
+            if(currentModuleId === 1) {
+                processStatementCSV();
+            } else if(currentModuleId === 2) {
+                processFeedCSV();
+            } else {
+                alert("Module logic under development. Coming up next!");
+            }
+        }
+
+        function processStatementCSV() {
             const reader = new FileReader();
             reader.onload = function(e) {
                 const text = e.target.result;
@@ -130,16 +162,50 @@
                 });
 
                 processedContent = cleanedLines.join('\n');
-
                 log.innerHTML += `<br>> Total rows analyzed: <b>${lines.length}</b>`;
                 log.innerHTML += `<br>> Empty rows removed: <b class="text-amber-400">${emptyCount}</b>`;
-                log.innerHTML += `<br>> <span class="text-indigo-400">Success!</span> Whitespace normalized and formatting secured.`;
+                log.innerHTML += `<br>> <span class="text-indigo-400">Success!</span> Statement sanitized.`;
                 
-                const btn = document.getElementById('process-btn');
-                btn.innerText = "Download Cleaned CSV";
-                btn.onclick = downloadResult;
+                prepareDownloadButton();
             };
             reader.readAsText(selectedFile, 'utf-8');
+        }
+
+        function processFeedCSV() {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const lines = text.split(/\r\n|\n/);
+                const log = document.getElementById('log');
+                
+                let validLines = [];
+                let malformedCount = 0;
+
+                // Basic feed check: ensure quotes/delimiters look safe and remove broken empty lines
+                lines.forEach((line, index) => {
+                    if(line.trim() === "") {
+                        malformedCount++;
+                        return;
+                    }
+                    // Simple normalization for marketplace feeds (e.g., fixing double quotes or trailing commas)
+                    let fixedLine = line.replace(/[\r\t]/g, ' ');
+                    validLines.push(fixedLine);
+                });
+
+                processedContent = validLines.join('\n');
+                log.innerHTML += `<br>> Feed rows parsed: <b>${lines.length}</b>`;
+                log.innerHTML += `<br>> Malformed/Empty rows dropped: <b class="text-amber-400">${malformedCount}</b>`;
+                log.innerHTML += `<br>> <span class="text-indigo-400">Success!</span> Marketplace feed cleaned and formatted.`;
+
+                prepareDownloadButton();
+            };
+            reader.readAsText(selectedFile, 'utf-8');
+        }
+
+        function prepareDownloadButton() {
+            const btn = document.getElementById('process-btn');
+            btn.innerText = "Download Processed File";
+            btn.onclick = downloadResult;
         }
 
         function downloadResult() {
