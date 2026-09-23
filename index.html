@@ -1,17 +1,22 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SecureClient Toolkit — Professional B2B Utilities</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- PDF.js CDN for client-side PDF extraction -->
+    <script>
+        tailwind.config = { darkMode: 'class' };
+    </script>
+    <!-- PDF.js CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
+    <!-- JSZip CDN for Batch Processing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white">
+<body class="bg-slate-900 dark:bg-slate-900 text-slate-100 min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white transition-colors duration-200">
 
     <!-- Header -->
     <header class="border-b border-slate-800 px-6 py-4 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
@@ -21,10 +26,13 @@
                 <h1 class="text-lg font-bold tracking-wider text-white">SecureClient<span class="text-indigo-400">Toolkit</span></h1>
             </div>
             <div class="flex items-center space-x-3">
-                <span class="text-xs bg-emerald-950/80 text-emerald-400 border border-emerald-800/60 px-3 py-1.5 rounded-full flex items-center space-x-1.5">
+                <span class="text-xs bg-emerald-950/80 text-emerald-400 border border-emerald-800/60 px-3 py-1.5 rounded-full hidden sm:flex items-center space-x-1.5">
                     <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                     <span>100% Client-Side / Zero Server Logs</span>
                 </span>
+                <button onclick="toggleTheme()" class="p-2 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 transition" title="Toggle Theme">
+                    <svg id="theme-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                </button>
             </div>
         </div>
     </header>
@@ -59,6 +67,14 @@
                 <span class="text-xs bg-slate-700 w-5 h-5 rounded-md flex items-center justify-center">6</span>
                 <span class="truncate">Data Anonymizer</span>
             </button>
+
+            <!-- History Section -->
+            <div class="mt-6 pt-4 border-t border-slate-800">
+                <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-1">Session History</h3>
+                <div id="history-box" class="bg-slate-950 border border-slate-800/80 rounded-xl p-3 text-xs text-slate-400 space-y-1.5 max-h-36 overflow-y-auto font-mono">
+                    <span class="text-slate-600 italic">No operations yet</span>
+                </div>
+            </div>
         </div>
 
         <!-- Working Area -->
@@ -97,7 +113,13 @@
                     </div>
                 </div>
 
-                <!-- Enhanced Drag & Drop Box -->
+                <!-- Custom Masking Input (Only visible for Module 6) -->
+                <div id="custom-mask-container" class="mb-6 bg-slate-900/60 p-4 rounded-xl border border-slate-800 hidden">
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Custom Keyword / Regex to Mask</label>
+                    <input type="text" id="opt-custom-mask" placeholder="e.g. PROJECT_X or SecretID" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <!-- Enhanced Drag & Drop Box (Supports Multiple Files) -->
                 <div id="drop-zone" 
                      class="border-2 border-dashed border-slate-700/80 hover:border-indigo-500 transition rounded-xl p-8 text-center cursor-pointer bg-slate-900/30 group relative"
                      ondragover="handleDragOver(event)" 
@@ -105,9 +127,9 @@
                      ondrop="handleDrop(event)" 
                      onclick="document.getElementById('fileInput').click()">
                     <svg class="w-12 h-12 mx-auto text-slate-500 group-hover:text-indigo-400 transition mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-                    <p class="text-sm font-medium text-slate-300 group-hover:text-white transition" id="file-label">Click here or drag & drop your data file</p>
-                    <p class="text-xs text-slate-500 mt-1">Processed entirely inside browser memory (Max 10MB)</p>
-                    <input type="file" id="fileInput" class="hidden" accept=".csv,.txt,.tsv,.pdf" onchange="handleFileInput(this)">
+                    <p class="text-sm font-medium text-slate-300 group-hover:text-white transition" id="file-label">Click here or drag & drop multiple files (Batch Ready)</p>
+                    <p class="text-xs text-slate-500 mt-1">Processed entirely inside browser memory (Multiple files will be zipped)</p>
+                    <input type="file" id="fileInput" class="hidden" multiple accept=".csv,.txt,.tsv,.pdf" onchange="handleFileInput(this)">
                 </div>
 
                 <!-- Result & Preview Area -->
@@ -130,7 +152,7 @@
 
             <!-- Working Area Footer -->
             <div class="mt-8 pt-4 border-t border-slate-800/80 flex justify-between items-center text-xs text-slate-500">
-                <span id="version-label">SecureClient Engine v2.0</span>
+                <span id="version-label">SecureClient Engine v3.0 (Batch Enabled)</span>
                 <button id="process-btn" onclick="currentAction()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-medium transition shadow-lg shadow-indigo-600/25 disabled:opacity-40 disabled:cursor-not-allowed" disabled>Process Data</button>
             </div>
 
@@ -140,9 +162,10 @@
     <!-- Logic Script -->
     <script>
         let currentModuleId = 1;
-        let selectedFile = null;
-        let processedContent = "";
+        let selectedFiles = [];
+        let processedResults = []; // Array of {name, content}
         let outputFilename = "processed_data.csv";
+        let historyLog = [];
 
         const modulesData = {
             1: { title: "Financial Statement Transformer", desc: "Standardize and clean bank statements locally without uploading data to external servers.", btnText: "Process & Clean Statement", accept: ".csv,.txt,.tsv" },
@@ -153,7 +176,6 @@
             6: { title: "Data Anonymizer & Masker", desc: "Automatically mask sensitive PII fields (emails, phones) locally before exporting.", btnText: "Anonymize Data", accept: ".csv,.txt,.tsv" }
         };
 
-        // Load saved preferences
         window.addEventListener('DOMContentLoaded', () => {
             const savedDelim = localStorage.getItem('sc_delim');
             const savedEnc = localStorage.getItem('sc_enc');
@@ -161,7 +183,17 @@
             if(savedDelim) document.getElementById('opt-delimiter').value = savedDelim;
             if(savedEnc) document.getElementById('opt-encoding').value = savedEnc;
             if(savedFmt) document.getElementById('opt-format').value = savedFmt;
+            
+            // Load theme
+            if(localStorage.getItem('sc_theme') === 'light') {
+                document.documentElement.classList.remove('dark');
+            }
         });
+
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('sc_theme', isDark ? 'dark' : 'light');
+        }
 
         function savePreferences() {
             localStorage.setItem('sc_delim', document.getElementById('opt-delimiter').value);
@@ -182,108 +214,180 @@
             document.getElementById('mod-title').innerText = modulesData[id].title;
             document.getElementById('mod-desc').innerText = modulesData[id].desc;
             document.getElementById('fileInput').accept = modulesData[id].accept;
+            document.getElementById('custom-mask-container').classList.toggle('hidden', id !== 6);
             document.getElementById('result-area').classList.add('hidden');
-            selectedFile = null;
-            processedContent = "";
-            document.getElementById('file-label').innerText = "Click here or drag & drop your data file";
+            selectedFiles = [];
+            processedResults = [];
+            document.getElementById('file-label').innerText = "Click here or drag & drop multiple files (Batch Ready)";
             const btn = document.getElementById('process-btn');
             btn.disabled = true;
             btn.innerText = modulesData[id].btnText;
             btn.onclick = currentAction;
         }
 
-        function handleDragOver(e) {
-            e.preventDefault();
-            document.getElementById('drop-zone').classList.add('border-indigo-500', 'bg-indigo-950/20');
-        }
-
-        function handleDragLeave(e) {
-            e.preventDefault();
-            document.getElementById('drop-zone').classList.remove('border-indigo-500', 'bg-indigo-950/20');
-        }
-
+        function handleDragOver(e) { e.preventDefault(); document.getElementById('drop-zone').classList.add('border-indigo-500', 'bg-indigo-950/20'); }
+        function handleDragLeave(e) { e.preventDefault(); document.getElementById('drop-zone').classList.remove('border-indigo-500', 'bg-indigo-950/20'); }
         function handleDrop(e) {
             e.preventDefault();
             document.getElementById('drop-zone').classList.remove('border-indigo-500', 'bg-indigo-950/20');
-            if(e.dataTransfer.files && e.dataTransfer.files[0]) {
-                processFileObject(e.dataTransfer.files[0]);
-            }
+            if(e.dataTransfer.files && e.dataTransfer.files.length > 0) processFileObjects(e.dataTransfer.files);
         }
-
         function handleFileInput(input) {
-            if(input.files && input.files[0]) {
-                processFileObject(input.files[0]);
-            }
+            if(input.files && input.files.length > 0) processFileObjects(input.files);
         }
 
-        function processFileObject(file) {
-            if(file.size > 10 * 1024 * 1024) {
-                alert("File is too large! Maximum limit for browser memory is 10MB.");
+        function processFileObjects(files) {
+            selectedFiles = Array.from(files);
+            let totalSize = selectedFiles.reduce((acc, f) => acc + f.size, 0);
+            if(totalSize > 30 * 1024 * 1024) {
+                alert("Total files size exceeds 30MB browser RAM limit.");
                 return;
             }
-            selectedFile = file;
-            outputFilename = "processed_" + selectedFile.name;
-            document.getElementById('file-label').innerHTML = `Selected file: <b class="text-indigo-400">${selectedFile.name}</b> (${(selectedFile.size/1024).toFixed(1)} KB)`;
+            document.getElementById('file-label').innerHTML = `Selected files: <b class="text-indigo-400">${selectedFiles.length} file(s)</b> (${(totalSize/1024).toFixed(1)} KB)`;
             document.getElementById('process-btn').disabled = false;
             const log = document.getElementById('log');
             document.getElementById('result-area').classList.remove('hidden');
-            log.innerHTML = `> File securely loaded into browser RAM.<br>> File size: ${selectedFile.size} bytes.<br>> Ready under Module #${currentModuleId}.`;
+            log.innerHTML = `> Loaded ${selectedFiles.length} file(s) into RAM.<br>> Ready under Module #${currentModuleId}.`;
         }
 
-        function currentAction() {
-            if(!selectedFile) return;
-            
-            if(currentModuleId === 4) {
-                // Handle PDF parsing via PDF.js
-                const reader = new FileReader();
-                reader.onload = async function(e) {
-                    const typedarray = new Uint8Array(e.target.result);
+        async function currentAction() {
+            if(selectedFiles.length === 0) return;
+            processedResults = [];
+            const encoding = document.getElementById('opt-encoding').value;
+            const format = document.getElementById('opt-format').value;
+
+            for(let file of selectedFiles) {
+                if(currentModuleId === 4) {
+                    // PDF processing
                     try {
-                        const loadingTask = pdfjsLib.getDocument(typedarray);
-                        const pdf = await loadingTask.promise;
-                        let fullTextRows = ["Page_Num,Extracted_Text_Content"];
-                        
-                        for(let i = 1; i <= pdf.numPages; i++) {
+                        const buffer = await file.arrayBuffer();
+                        const pdf = await pdfjsLib.getDocument(new Uint8Array(buffer)).promise;
+                        let rows = ["Page_Num,Extracted_Text_Content"];
+                        for(let i=1; i<=pdf.numPages; i++) {
                             const page = await pdf.getPage(i);
-                            const textContent = await page.getTextContent();
-                            const pageText = textContent.items.map(item => item.str).join(' ');
-                            if(pageText.trim()) {
-                                fullTextRows.push(`${i},"${pageText.replace(/"/g, '""')}"`);
-                            }
+                            const text = (await page.getTextContent()).items.map(it => it.str).join(' ');
+                            if(text.trim()) rows.push(`${i},"${text.replace(/"/g, '""')}"`);
                         }
-                        const format = document.getElementById('opt-format').value;
-                        formatOutput(fullTextRows, format, "extracted_pdf_data.csv");
-                        document.getElementById('log').innerHTML += `<br>> PDF Parsed: <b>${pdf.numPages}</b> pages extracted.<br>> <span class="text-indigo-400">Success!</span>`;
-                        prepareDownload();
+                        let formatted = formatContent(rows, format);
+                        processedResults.push({ name: file.name.replace(/\.[^/.]+$/, "") + (format === 'json' ? '.json' : '.csv'), content: formatted });
                     } catch(err) {
-                        document.getElementById('log').innerHTML += `<br>> <span class="text-amber-400">Error parsing PDF:</span> ${err.message}`;
+                        console.error(err);
                     }
-                };
-                reader.readAsArrayBuffer(selectedFile);
-            } else {
-                // Handle text/CSV files
-                const encoding = document.getElementById('opt-encoding').value;
-                const format = document.getElementById('opt-format').value;
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const text = e.target.result;
-                    if(currentModuleId === 1) processStatement(text, format);
-                    else if(currentModuleId === 2) processFeed(text, format);
-                    else if(currentModuleId === 3) processVAT(text, format);
-                    else if(currentModuleId === 5) processCRM(text, format);
-                    else if(currentModuleId === 6) processAnonymizer(text, format);
-                };
-                reader.readAsText(selectedFile, encoding);
+                } else {
+                    // Text/CSV processing
+                    const text = await readFileAsText(file, encoding);
+                    let processedLines = [];
+                    if(currentModuleId === 1) processedLines = processStatementLogic(text);
+                    else if(currentModuleId === 2) processedLines = processFeedLogic(text);
+                    else if(currentModuleId === 3) processedLines = processVATLogic(text);
+                    else if(currentModuleId === 5) processedLines = processCRMLogic(text);
+                    else if(currentModuleId === 6) processedLines = processAnonymizerLogic(text);
+
+                    let formatted = formatContent(processedLines, format);
+                    processedResults.push({ name: file.name.replace(/\.[^/.]+$/, "") + (format === 'json' ? '.json' : '.csv'), content: formatted });
+                }
+            }
+
+            if(processedResults.length > 0) {
+                renderPreview(processedResults[0].content, format);
+                document.getElementById('log').innerHTML += `<br>> Successfully processed <b>${processedResults.length}</b> file(s).<br>> <span class="text-indigo-400">Ready for download!</span>`;
+                addHistoryEntry(modulesData[currentModuleId].title, selectedFiles.length);
+                prepareDownload();
             }
         }
 
-        function renderPreview(rows, delimiter = ',') {
+        function readFileAsText(file, encoding) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = e => resolve(e.target.result);
+                reader.readAsText(file, encoding);
+            });
+        }
+
+        function processStatementLogic(text) {
+            let lines = text.split(/\r\n|\n/);
+            let cleaned = [];
+            lines.forEach(l => { if(l.trim()) cleaned.push(l.trim().replace(/\s+/g, ' ')); });
+            return cleaned;
+        }
+
+        function processFeedLogic(text) {
+            let lines = text.split(/\r\n|\n/);
+            let valid = [];
+            lines.forEach(l => { if(l.trim()) valid.push(l.replace(/[\r\t]/g, ' ')); });
+            return valid;
+        }
+
+        function processVATLogic(text) {
+            let lines = text.split(/\r\n|\n/);
+            let results = ["VAT_ID,Status,Compliance_Note"];
+            const regex = /^[A-Z]{2}[0-9A-Za-z\+\*\.]{2,12}$/;
+            lines.forEach(l => {
+                let vat = l.trim().split(',')[0].replace(/["']/g, '');
+                if(!vat) return;
+                if(regex.test(vat)) results.push(`${vat},VALID,Format OK`);
+                else results.push(`${vat},INVALID,Check format`);
+            });
+            return results;
+        }
+
+        function processCRMLogic(text) {
+            let lines = text.split(/\r\n|\n/);
+            let unique = new Set();
+            lines.forEach(l => { if(l.trim()) unique.add(l.trim()); });
+            return Array.from(unique);
+        }
+
+        function processAnonymizerLogic(text) {
+            let lines = text.split(/\r\n|\n/);
+            let masked = [];
+            let emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+            let phoneRegex = /\+?[0-9][0-9()\-\s]{7,}[0-9]/g;
+            let customVal = document.getElementById('opt-custom-mask').value.trim();
+            
+            lines.forEach(l => {
+                let cleanL = l.replace(emailRegex, '[REDACTED_EMAIL]').replace(phoneRegex, '[REDACTED_PHONE]');
+                if(customVal) {
+                    let customRegex = new RegExp(customVal, 'g');
+                    cleanL = cleanL.replace(customRegex, '[REDACTED_CUSTOM]');
+                }
+                masked.push(cleanL);
+            });
+            return masked;
+        }
+
+        function formatContent(lines, format) {
+            const delimiter = document.getElementById('opt-delimiter').value;
+            if(format === 'json') {
+                let headers = lines[0] ? lines[0].split(delimiter).map(h => h.replace(/["']/g, '').trim()) : [];
+                let jsonArr = [];
+                for(let i = 1; i < lines.length; i++) {
+                    let vals = lines[i].split(delimiter);
+                    let obj = {};
+                    headers.forEach((h, idx) => { obj[h || `col_${idx+1}`] = vals[idx] ? vals[idx].replace(/["']/g, '').trim() : ""; });
+                    jsonArr.push(obj);
+                }
+                return JSON.stringify(jsonArr, null, 2);
+            } else {
+                return lines.join('\n');
+            }
+        }
+
+        function renderPreview(content, format) {
             const head = document.getElementById('preview-head');
             const body = document.getElementById('preview-body');
-            head.innerHTML = '';
-            body.innerHTML = '';
+            head.innerHTML = ''; body.innerHTML = '';
+            if(format === 'json') {
+                let tr = document.createElement('tr');
+                let td = document.createElement('td');
+                td.className = "px-3 py-2 text-indigo-400";
+                td.innerText = "JSON Preview (First items rendered as text)";
+                tr.appendChild(td); head.appendChild(tr);
+                return;
+            }
+            const rows = content.split(/\r\n|\n/);
             if(rows.length === 0) return;
-            
+            const delimiter = document.getElementById('opt-delimiter').value;
             const headers = rows[0].split(delimiter);
             let headTr = document.createElement('tr');
             headers.forEach(h => {
@@ -307,112 +411,44 @@
             }
         }
 
-        function formatOutput(lines, format, defaultName) {
-            const delimiter = document.getElementById('opt-delimiter').value;
-            renderPreview(lines, delimiter);
-
-            if(format === 'json') {
-                outputFilename = defaultName.replace('.csv', '.json');
-                let headers = lines[0] ? lines[0].split(delimiter).map(h => h.replace(/["']/g, '').trim()) : [];
-                let jsonArr = [];
-                for(let i = 1; i < lines.length; i++) {
-                    let vals = lines[i].split(delimiter);
-                    let obj = {};
-                    headers.forEach((h, idx) => {
-                        obj[h || `col_${idx+1}`] = vals[idx] ? vals[idx].replace(/["']/g, '').trim() : "";
-                    });
-                    jsonArr.push(obj);
-                }
-                processedContent = JSON.stringify(jsonArr, null, 2);
-            } else {
-                outputFilename = defaultName;
-                processedContent = lines.join('\n');
-            }
-        }
-
-        function processStatement(text, format) {
-            const lines = text.split(/\r\n|\n/);
-            let cleaned = [];
-            lines.forEach(l => { if(l.trim()) cleaned.push(l.trim().replace(/\s+/g, ' ')); });
-            formatOutput(cleaned, format, "cleaned_statement.csv");
-            document.getElementById('log').innerHTML += `<br>> Rows analyzed: <b>${lines.length}</b><br>> <span class="text-indigo-400">Success!</span>`;
-            prepareDownload();
-        }
-
-        function processFeed(text, format) {
-            const lines = text.split(/\r\n|\n/);
-            let valid = [];
-            lines.forEach(l => { if(l.trim()) valid.push(l.replace(/[\r\t]/g, ' ')); });
-            formatOutput(valid, format, "sanitized_feed.csv");
-            document.getElementById('log').innerHTML += `<br>> Feed parsed: <b>${lines.length}</b> rows<br>> <span class="text-indigo-400">Success!</span>`;
-            prepareDownload();
-        }
-
-        function processVAT(text, format) {
-            const lines = text.split(/\r\n|\n/);
-            let results = ["VAT_ID,Status,Compliance_Note"];
-            let vCount = 0, iCount = 0;
-            const regex = /^[A-Z]{2}[0-9A-Za-z\+\*\.]{2,12}$/;
-            lines.forEach(l => {
-                let vat = l.trim().split(',')[0].replace(/["']/g, '');
-                if(!vat) return;
-                if(regex.test(vat)) { results.push(`${vat},VALID,Format OK`); vCount++; }
-                else { results.push(`${vat},INVALID,Check format`); iCount++; }
-            });
-            formatOutput(results, format, "vat_validation_report.csv");
-            document.getElementById('log').innerHTML += `<br>> Valid: <b class="text-emerald-400">${vCount}</b> | Invalid: <b class="text-amber-400">${iCount}</b><br>> <span class="text-indigo-400">Success!</span>`;
-            prepareDownload();
-        }
-
-        function processCRM(text, format) {
-            const lines = text.split(/\r\n|\n/);
-            let unique = new Set();
-            let dups = 0;
-            lines.forEach(l => {
-                let row = l.trim();
-                if(row) {
-                    if(unique.has(row)) dups++;
-                    else unique.add(row);
-                }
-            });
-            formatOutput(Array.from(unique), format, "sanitized_crm_contacts.csv");
-            document.getElementById('log').innerHTML += `<br>> Unique records: <b>${unique.size}</b> | Duplicates pruned: <b class="text-amber-400">${dups}</b><br>> <span class="text-indigo-400">Success!</span>`;
-            prepareDownload();
-        }
-
-        function processAnonymizer(text, format) {
-            const lines = text.split(/\r\n|\n/);
-            let masked = [];
-            let emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-            let phoneRegex = /\+?[0-9][0-9()\-\s]{7,}[0-9]/g;
-            
-            lines.forEach(l => {
-                let cleanL = l.replace(emailRegex, '[REDACTED_EMAIL]').replace(phoneRegex, '[REDACTED_PHONE]');
-                masked.push(cleanL);
-            });
-            formatOutput(masked, format, "anonymized_data.csv");
-            document.getElementById('log').innerHTML += `<br>> PII masking complete for <b>${lines.length}</b> lines.<br>> <span class="text-indigo-400">Success!</span>`;
-            prepareDownload();
+        function addHistoryEntry(modName, count) {
+            const box = document.getElementById('history-box');
+            if(historyLog.length === 0) box.innerHTML = '';
+            const timeStr = new Date().toLocaleTimeString();
+            historyLog.unshift(`[${timeStr}] ${modName} (${count} file)`);
+            if(historyLog.length > 5) historyLog.pop();
+            box.innerHTML = historyLog.map(item => `<div>${item}</div>`).join('');
         }
 
         function prepareDownload() {
             const btn = document.getElementById('process-btn');
-            btn.innerText = "Download Result File";
+            btn.innerText = processedResults.length > 1 ? "Download ZIP Archive" : "Download Result File";
             btn.className = "bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-xl font-medium transition shadow-lg shadow-emerald-600/25";
             btn.onclick = downloadResult;
         }
 
-        function downloadResult() {
-            if(!processedContent) return;
-            const format = document.getElementById('opt-format').value;
-            const mime = format === 'json' ? 'application/json;charset=utf-8;' : 'text/csv;charset=utf-8;';
-            const blob = new Blob([processedContent], { type: mime });
+        async function downloadResult() {
+            if(processedResults.length === 0) return;
+            if(processedResults.length === 1) {
+                const res = processedResults[0];
+                const mime = res.name.endsWith('.json') ? 'application/json;charset=utf-8;' : 'text/csv;charset=utf-8;';
+                const blob = new Blob([res.content], { type: mime });
+                triggerDownload(blob, res.name);
+            } else {
+                const zip = new JSZip();
+                processedResults.forEach(res => {
+                    zip.file(res.name, res.content);
+                });
+                const content = await zip.generateAsync({ type: "blob" });
+                triggerDownload(content, "secure_client_batch_results.zip");
+            }
+        }
+
+        function triggerDownload(blob, filename) {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = url;
-            a.download = outputFilename;
-            document.body.appendChild(a);
-            a.click();
+            a.href = url; a.download = filename;
+            document.body.appendChild(a); a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         }
